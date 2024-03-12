@@ -1,0 +1,11 @@
+spring:
+  profiles:
+    active: native
+  application:
+    name: signal
+  config:
+    import:
+      - optional:configserver:http://localhost:8888
+redis:
+  value:
+    topic: "pubsub:interview-bit"

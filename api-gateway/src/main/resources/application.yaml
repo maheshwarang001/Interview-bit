@@ -1,0 +1,39 @@
+server:
+  port: 6000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/auth/**
+          filters:
+            - AuthFilter
+
+        - id: JobCreator
+          uri: lb://JobCreator
+          predicates:
+            - Path=/job-post/**
+          filters:
+            - AuthFilter
+
+        - id: room-register-service
+          uri: lb://room-register-service
+          predicates:
+            - Path=/third-party/**
+          filters:
+            - AuthFilter
+
+        - id: signal
+          uri: lb:ws://signal
+          predicates:
+            - Path=/meeting/**
+
+
+eureka:
+  instance:
+    prefer-ip-address: true
