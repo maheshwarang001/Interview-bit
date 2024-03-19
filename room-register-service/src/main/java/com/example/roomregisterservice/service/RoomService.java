@@ -1,9 +1,12 @@
 package com.example.roomregisterservice.service;
 
 import com.example.roomregisterservice.dao.RoomDao;
+import com.example.roomregisterservice.message.MessageProducer;
 import com.example.roomregisterservice.model.*;
 import com.example.roomregisterservice.rest.CheckerService;
 import lombok.extern.slf4j.Slf4j;
+import netscape.javascript.JSObject;
+import org.bson.json.JsonObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +28,10 @@ public class RoomService {
     CheckerService service;
 
 
+    @Autowired
+    private MessageProducer messageProducer;
+
+
 
     public List<Room> getall(){
         return roomDao.getAll();
@@ -38,15 +45,38 @@ public class RoomService {
 
         if(service.checkRecruiterAndJobId(room_data.getJobId(), rId)){
 
-            room_data.setRoomID(UUID.randomUUID());
 
-            for(Map.Entry<Role,UserDetails> mp : room_data.getUserList().entrySet()){
+            UUID room_ID = UUID.randomUUID();
+
+
+            room_data.setRoomID(room_ID);
+
+            LocalDateTime time = LocalDateTime.now().plusMinutes(15);
+            room_data.setSchedule(time);
+
+            for (Map.Entry<Role, UserDetails> mp : room_data.getUserList().entrySet()) {
+                UUID user_ID = UUID.randomUUID();
                 UserDetails u = mp.getValue();
-                u.setUserId(UUID.randomUUID());
+                u.setUserId(user_ID);
+
+                String user = String.format("%s/%s/%s", room_ID, user_ID, mp.getKey());
+
+                Map<String,String> map = new HashMap<>();
+                map.put("email", u.getEmail());
+                map.put("link",user);
+                map.put("time",time.toString());
+
+                System.out.println(map.toString());
+
+
+                messageProducer.sendMessage("email", map.toString());
             }
 
-            room_data.setSchedule(LocalDateTime.now().plusDays(1));
+
             roomDao.createRoom(room_data);
+
+
+
             return true;
 
         }
